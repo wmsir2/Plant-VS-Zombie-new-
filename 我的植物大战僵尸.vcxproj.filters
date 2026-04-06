@@ -27,16 +27,10 @@
     <ClCompile Include="Plant.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="sunshineBall.h">
-      <Filter>头文件</Filter>
-    </ClCompile>
     <ClCompile Include="sunshineBall.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Zombie.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="Map.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
