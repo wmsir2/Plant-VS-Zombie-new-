@@ -380,7 +380,7 @@ void userClick() {
 				isPlantArea = 1; 
 			}
 			// 在非法区域释放，取消选择
-			else if (curZhiWu > 0 && (msg.x < 256 || msg.x > 1000 || msg.y < 179 || msg.y > 489)) {		//����ڷǷ������ɿ���������ѡ��
+			else if (curZhiWu > 0 && (msg.x < 256 || msg.x > 1000 || msg.y < 179 || msg.y > 489)) {		//?????????????????????????
 				curZhiWu = 0;
 				status = 0;
 				isPlantArea = 0;
@@ -553,26 +553,27 @@ void createZombie() {
 		return;
 	}
 
-	static int zmFre = 200;  // 僵尸生成频率（帧）
+	static int zmFre = 50;  // 僵尸生成频率（帧）
 	static int count = 0;    // 帧计数器
 	count++;
-	// 到达生成时间
 	if (count > zmFre) {
 		count = 0;
-		zmFre = 1000 + rand() % 500; // 下一次生成时间（1000~1500帧随机）
+		zmFre = 100 + rand() % 200; // 下一次生成时间（1000~1500帧随机）
 
 		for (int i = 0; i < ZOMBIE_MAX; i++) { // 在僵尸池中寻找未使用的位置
 			if (!zms[i].used) { // 找到空闲僵尸
 				zms[i].used = true;  
-				zms[i].x = WIN_WIDTH; // 从屏幕右侧生成
+				zms[i].x = WIN_WIDTH ;   // 从屏幕右侧生成
 				zms[i].row = rand() % MAP_ROW; // 随机行
 				zms[i].y = 172 + (1 + zms[i].row) * 100;
 				// 基础属性
 				zms[i].speed = 1;
 				zms[i].blood = 100;
 				zms[i].dead = false;
+				zms[i].eating = false;
+				zms[i].frameIndex = 0;
 				zmCount++;
-				cout << "在第 "  << zms[i].row << " 行成功生成一个僵尸" << endl;
+				cout << "在第 " << zms[i].row << " 行成功生成僵尸 i=" << i << " used=" << zms[i].used << endl;
 				break; 
 			}
 		}
@@ -664,7 +665,7 @@ void shoot() {
 							int zwX = 256 + j * 81;	
 							int zwY = 179 + i * 102 + 14;
 							// 设置子弹初始位置
-							bullets[k].x = zwX + imgPlant[map[i][j].plant->type - 1][0]->getwidth() - 10;	//�ӵ�����
+							bullets[k].x = zwX + imgPlant[map[i][j].plant->type - 1][0]->getwidth() - 10;	//???????
 							bullets[k].y = zwY + 5;
 							// 当前行已发射子弹，避免重复触发
 							lines[i] = 0;
@@ -680,10 +681,10 @@ void updateBullets() {
 	for (int i = 0; i < countMax; i++) {
 		if (bullets[i].used) {
 			bullets[i].x += bullets[i].speed;
-			if (bullets[i].x > WIN_WIDTH) {	//����ӵ��ɳ���Χ
+			if (bullets[i].x > WIN_WIDTH) {	//???????????Χ
 				bullets[i].used = false;
 			}
-			if (bullets[i].blast) {		//����ӵ��뽩ʬ������ײ
+			if (bullets[i].blast) {		//????????????????
 				bullets[i].frameIndex++;
 				if (bullets[i].frameIndex >= 4) {
 					bullets[i].used = false;
@@ -693,59 +694,54 @@ void updateBullets() {
 	}
 }
 
-void checkBullet_to_ZM() {		//����ӵ���ײ��ʬ
-	int bCount = sizeof(bullets) / sizeof(bullets[0]);	//ֲ���ӵ�������
-	int zCount = sizeof(zms) / sizeof(zms[0]);		//��ʬ������
+void checkBullet_to_ZM() {		//????????????
+	int bCount = sizeof(bullets) / sizeof(bullets[0]);	//????????????
+	int zCount = sizeof(zms) / sizeof(zms[0]);		//?????????
 	for (int i = 0; i < bCount; i++) {
-		if (bullets[i].used == false || bullets[i].blast)continue;	//�������δʹ�õ��ӵ����ѱ�ը���ӵ�
+		if (bullets[i].used == false || bullets[i].blast)continue;	//???????δ??????????????????
 		for (int k = 0; k < zCount; k++) {
-			if (zms[k].used == false)continue;	//�������δ���ֵĽ�ʬ
+			if (zms[k].used == false)continue;	//???????δ???????
 			int x1 = zms[k].x + 80;
 			int x2 = zms[k].x + 110;
 			int x = bullets[i].x;
-			if (zms[k].dead == false && bullets[i].row == zms[k].row && x > x1 && x < x2) {		//��ʬ��ֲ���ӵ���ײ
-				zms[k].blood -= 10;		//��ʬ��Ѫ
-				bullets[i].blast = true;
-				bullets[i].speed = 0;
-
-				if (zms[k].blood <= 0) {	//��⽩ʬѪ���Ƿ�Ϊ0
-					zms[k].dead = true;		//����ʬ����Ϊ����״̬
-					zms[k].speed = 0;		//����ʬ���ٶ�����Ϊ0
-					zms[k].frameIndex = 0;
-				}
-				break;		//��ֲ���ӵ���ײ�ɹ�������������ʬ�����ж�
+			if (zms[k].dead == false && bullets[i].row == zms[k].row && x > x1 && x < x2) {		//??????????????
+				zms[k].blood -= 10;
+				zms[k].dead = true;
+				zms[k].eating = false;
+				zms[k].speed = 0;
+				zms[k].frameIndex = 0;
 			}
 		}
 	}
 }
 
 void eatPlant() {
-	// �����ʬ���ڿ�ʳ
-	for (int i = 0; i < ZOMBIE_MAX && zms[i].used; i++) {	//�������н�ʬ,�ҵ�δ��ʹ�õĽ�ʬ
-		zms[i].eatingTime++; // ���ӽ�ʬ�Ľ�ʳ��ʱ��
-		if (zms[i].eatingTime >= 30) { // ÿ30֡��һ��Ѫ��
-			Plant* plant = map[zms[i].row][zms[i].col].plant; // ��ȡֲ�����
+	for (int i = 0; i < ZOMBIE_MAX && zms[i].used; i++) {
+	if (!zms[i].eating) continue;
+	zms[i].eatingTime++; // ???????????????
+		if (zms[i].eatingTime >= 30) { // ?30?????????
+			Plant* plant = map[zms[i].row][zms[i].col].plant; // ?????????
 			if (plant != nullptr) {
-				plant->takeDamage(10); // ÿ�ο�10��Ѫ��
-				zms[i].eatingTime = 0; // ���ý�ʳ��ʱ��
+				plant->takeDamage(10); // ??ο?10?????
+				zms[i].eatingTime = 0; // ???y???????
 
-				// ���ֲ���Ƿ��Ѿ�����
+				// ????????????????
 				if (!plant->isAlive()) {
-					map[zms[i].row][zms[i].col].plant->type = 0; // ֲ���������Ƴ�
-					map[zms[i].row][zms[i].col].plant->catched = false; // ����ֲ��ı���ʳ״̬
+					map[zms[i].row][zms[i].col].plant->type = 0; // ????????????
+					map[zms[i].row][zms[i].col].plant->catched = false; // ??????????????
 
-					 //�������н�ʬ�������������ڿ�ʳ��ֲ��Ľ�ʬ״̬
+					 //???????н????????????????????????????
 					//for (int j = 0; j < ZOMBIE_MAX && zms[i].used; j++) {
-					//	if (zms[j].state == EATING && zms[j].row == map[zms[j].row]) {
-					//		// �жϽ�ʬ�������Ƿ���ֲ��λ����
-					//		int zombieX = zms[j].x + 80; // ��ʬ�������߽�
-					//		int zhiWuX = 256 + k * 81; // ����ֲ���X����
-					//		int x1 = zhiWuX + 10; // ֲ��������߽�
-					//		int x2 = zhiWuX + 60; // ֲ������Ҳ�߽�
+					//	if (zms[j].eating && zms[j].row == map[zms[j].row]) {
+					//		// ?ж?????????????????λ????
+					//		int zombieX = zms[j].x + 80; // ????????????
+					//		int zhiWuX = 256 + k * 81; // ????????X????
+					//		int x1 = zhiWuX + 10; // ???????????
+					//		int x2 = zhiWuX + 60; // ???????????
 					//		if (zombieX > x1 && zombieX < x2) {
-					//			zms[j].state = WALKING; // ��Ϊ����״̬
-					//			zms[j].speed = 1; // �ָ���ʬ���ƶ��ٶ�
-					//			zms[j].eatingTime = 0; // ���ÿ�ʳ��ʱ��
+					//			zms[j].eating = false; // ?????????
+					//			zms[j].speed = 1; // ??????????????
+					//			zms[j].eatingTime = 0; // ???????????
 					//		}
 					//	}
 					//}
@@ -757,42 +753,42 @@ void eatPlant() {
 
 void checkZombie_to_Plant() {
 	int zCount = sizeof(zms) / sizeof(zms[0]);
-	for (int i = 0; i < zCount; i++) { // �������н�ʬ
+	for (int i = 0; i < zCount; i++) { // ???????н??
 		int row = zms[i].row;
-		if (zms[i].state == DEAD) continue;
+		if (zms[i].dead) continue;
 
-		for (int k = 0; k < MAP_COL; k++) { // ����9��
-			if (map[row][k].plant != nullptr && map[row][k].plant->type == 0) continue; // ����Ƿ����ֲ��
+		for (int k = 0; k < MAP_COL; k++) { // ????9??
+			if (!map[row][k].plant || map[row][k].plant->type == 0) continue; // ????????????
 
-			int zhiWuX = 256 + k * 81; // ����ֲ���X����
-			int x1 = zhiWuX + 10; // ֲ��������߽�
-			int x2 = zhiWuX + 60; // ֲ������Ҳ�߽�
-			int x3 = zms[i].x + 80; // ��ʬ�������߽�
+			int zhiWuX = 256 + k * 81; // ????????X????
+			int x1 = zhiWuX + 10; // ???????????
+			int x2 = zhiWuX + 60; // ???????????
+			int x3 = zms[i].x + 80; // ????????????
 
-			// �жϽ�ʬ��ֲ���Ƿ�����ײ
+			// ?ж????????????????
 			if (x3 > x1 && x3 < x2) {
-				if (zms[i].state == EATING) { // �����ʬ���ڿ�ʳ
-					zms[i].eatingTime++; // ���ӽ�ʬ�Ľ�ʳ��ʱ��
-					if (zms[i].eatingTime >= 30) { // ÿ30֡��һ��Ѫ��
-						Plant* plant = map[row][k].plant; // ��ȡֲ�����
+				if (zms[i].eating) { // ????????????
+					zms[i].eatingTime++; // ???????????????
+					if (zms[i].eatingTime >= 30) { // ?30?????????
+						Plant* plant = map[row][k].plant; // ?????????
 						if (plant != nullptr) {
-							plant->takeDamage(10); // ÿ�ο�10��Ѫ��
-							zms[i].eatingTime = 0; // ���ý�ʳ��ʱ��
+							plant->takeDamage(10); // ??ο?10?????
+							zms[i].eatingTime = 0; // ???y???????
 
-							// ���ֲ���Ƿ��Ѿ�����
+							// ????????????????
 							if (!plant->isAlive()) {
-								map[row][k].plant->type = 0; // ֲ���������Ƴ�
-								map[row][k].plant->catched = false; // ����ֲ��ı���ʳ״̬
+								map[row][k].plant->type = 0; // ????????????
+								map[row][k].plant->catched = false; // ??????????????
 
-								// �������н�ʬ�������������ڿ�ʳ��ֲ��Ľ�ʬ״̬
+								// ???????н????????????????????????????
 								for (int j = 0; j < zCount; j++) {
-									if (zms[j].state == EATING && zms[j].row == row) {
-										// �жϽ�ʬ�������Ƿ���ֲ��λ����
-										int zombieX = zms[j].x + 80; // ��ʬ�������߽�
+									if (zms[j].eating && zms[j].row == row) {
+										// ?ж?????????????????λ????
+										int zombieX = zms[j].x + 80; // ????????????
 										if (zombieX > x1 && zombieX < x2) {
-											zms[j].state = WALKING; // ��Ϊ����״̬
-											zms[j].speed = 1; // �ָ���ʬ���ƶ��ٶ�
-											zms[j].eatingTime = 0; // ���ÿ�ʳ��ʱ��
+											zms[j].eating = false; // ?????????
+											zms[j].speed = 1; // ??????????????
+											zms[j].eatingTime = 0; // ???????????
 										}
 									}
 								}
@@ -801,10 +797,11 @@ void checkZombie_to_Plant() {
 					}
 				}
 				else {
-					// ��ʬ��ʼ��ʳ
-					zms[i].state = EATING;
-					zms[i].speed = 0; // ��ʬֹͣ�ƶ�
-					zms[i].eatingTime = 0; // ��ʼ����ʳ��ʱ��
+					// ?????????
+					zms[i].eating = true;
+					cout << "ZOMBIE " << i << " START EATING at x=" << zms[i].x << " col=" << k << endl;
+					zms[i].speed = 0; // ????????
+					zms[i].eatingTime = 0; // ?????????????
 				}
 			}
 		}
@@ -814,26 +811,26 @@ void checkZombie_to_Plant() {
 
 
 void collisionCheek() {
-	checkBullet_to_ZM();	//����ӵ���ײ��ʬ
-	checkZombie_to_Plant();	//��⽩ʬ��ֲ�����ײ���
+	checkBullet_to_ZM();	//????????????
+	checkZombie_to_Plant();	//????????????????
 }
 
 void updatePlant() {
-	static int updateCounter = 0; // ��Ӽ�����
-	int updateInterval = 5; // ���Ƹ���Ƶ�ʣ�ֵԽ�󶯻�Խ��,5������5��
+	static int updateCounter = 0; // ????????
+	int updateInterval = 5; // ????????????????????,5??????5??
 
 	if (++updateCounter < updateInterval) {
-		return; // ������δ������ʱ��������֡
+		return; // ??????δ????????????????
 	}
-	updateCounter = 0; // ���ü�����
+	updateCounter = 0; // ???ü?????
 	for (int i = 0; i < MAP_ROW; i++) {
 		for (int j = 0; j < MAP_COL; j++) {
 			if (map[i][j].plant != nullptr&&map[i][j].plant->type > 0) {
-				map[i][j].plant->frameIndex += 1; // ÿ�ε���ֻ����1
+				map[i][j].plant->frameIndex += 1; // ??ε????????1
 				int zhiWuType = map[i][j].plant->type - 1;
 				int index = map[i][j].plant->frameIndex;
 				if (index >= 60) {
-					map[i][j].plant->frameIndex = 0; // �ص���һ֡��ʵ��ѭ������
+					map[i][j].plant->frameIndex = 0; // ???????????????????
 				}
 				if (imgPlant[zhiWuType][index] == NULL) {
 					map[i][j].plant->frameIndex = 0;
@@ -844,17 +841,17 @@ void updatePlant() {
 }
 
 void updateGame(double dt) {
-	updatePlant();// ����ֲ��״̬
-	createSunshine();//�������
-	updateSunshine();//��������״̬
+	updatePlant();// ?????????
+	createSunshine();//???????
+	updateSunshine();//??????????
 
-	createZombie();		//������ʬ
-	updateZombie();		//���½�ʬ��״̬
+	createZombie();		//???????
+	updateZombie();		//??????????
 
-	shoot();		//�����ӵ�
-	updateBullets();	//�����ӵ�
+	shoot();		//???????
+	updateBullets();	//???????
 
-	collisionCheek();	//ʵ��ֲ���ӵ��ͽ�ʬ����ײ���
+	collisionCheek();	//?????????????????????
 }
 
 void startUI() {
@@ -886,7 +883,7 @@ void startUI() {
 	}
 }
 
-// ��ȡ��ǰʱ�䣨�룩  
+// ???????????  
 double getTime() {
 	return std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
 }
@@ -899,14 +896,14 @@ void viewScence() {
 	};
 	int index[9];
 	for (int i = 0; i < 9; i++) {
-		index[i] = rand() % 11;     // ��ʬ��վ��֡���
+		index[i] = rand() % 11;     // ????????????
 	}
 
-	const int frameChangeRate = 3;  // ���ƽ�ʬ֡�л��ٶ�
-	const int sleepTime = 10;        // ˯��ʱ�䣬������������
-	int frameCounter = 0;            // ���ƽ�ʬ֡�л��ļ�ʱ��
+	const int frameChangeRate = 3;  // ????????л????
+	const int sleepTime = 10;        // ??????????????????
+	int frameCounter = 0;            // ????????л???????
 
-	// ����ͳһ��֡�л�����
+	// ??????????л?????
 	auto updateZombies = [&](int xOffset) {
 		frameCounter++;
 		BeginBatchDraw();
@@ -915,29 +912,29 @@ void viewScence() {
 		for (int k = 0; k < 9; k++) {
 			putimagePNG(points[k].x - xMin + xOffset, points[k].y, &imgZmStand[index[k]]);
 			if (frameCounter >= frameChangeRate) {
-				index[k] = (index[k] + 1) % 11; // ���½�ʬ֡
+				index[k] = (index[k] + 1) % 11; // ???????
 			}
 		}
 
 		if (frameCounter >= frameChangeRate) {
-			frameCounter = 0; // ���ü�����
+			frameCounter = 0; // ???ü?????
 		}
 
 		EndBatchDraw();
 		Sleep(sleepTime);
 		};
 
-	// ��һ�׶Σ��ƶ���Ϸ��������
+	// ?????Σ???????????????
 	for (int x = 0; x >= xMin; x -= 2) {
 		updateZombies(x);
 	}
 
-	// ͣ��1S����
+	// ???1S????
 	for (int i = 0; i < 100; i++) {
 		updateZombies(xMin);
 	}
 
-	// �ڶ��׶Σ��ƶ���Ϸ��������
+	// ?????Σ???????????????
 	for (int x = xMin; x <= 0; x += 2) {
 		updateZombies(x);
 	}
@@ -978,43 +975,43 @@ bool checkOver() {
 
 int main() {
 	gameInit();
-	startUI();  // ����û�����
-	viewScence();	//�����Ϸ����(͵����ʬ)
-	barsDown();		//�������½�
+	startUI();  // ??????????
+	viewScence();	//??????????(??????)
+	barsDown();		//?????????
 
-	const double TIMESTEP = 1.0 / 60.0; // 60 FPS��ʱ�䲽������λ��  
-	double accumulator = 0.0;          // �ۻ���ʱ��  
-	double lastTime = getTime();        // �ϴθ��µ�ʱ��  
-	bool gameIsRunning = true;          // ��Ϸ����״̬  
+	const double TIMESTEP = 1.0 / 60.0; // 60 FPS???????????λ??  
+	double accumulator = 0.0;          // ????????  
+	double lastTime = getTime();        // ??θ??μ????  
+	bool gameIsRunning = true;          // ?????????  
 
-	// ��Ϸ��ѭ��  
+	// ????????  
 	while (gameIsRunning) {
-		double currentTime = getTime(); // ��ǰʱ��  
-		double deltaTime = currentTime - lastTime; // ������ʱ��  
+		double currentTime = getTime(); // ??????  
+		double deltaTime = currentTime - lastTime; // ?????????  
 		lastTime = currentTime;
 
-		// ��ֹĳ֡����ʱ�����  
-		if (deltaTime > 0.25) { // ������������ÿ֡�����ʱ��Ϊ250����  
+		// ???????????????  
+		if (deltaTime > 0.25) { // ???????????????????????250????  
 			deltaTime = 0.25;
 		}
 
-		accumulator += deltaTime; // �ۼӵ���ʱ����  
+		accumulator += deltaTime; // ???????????  
 
-		// ��������������ʱ�䲽��  
+		// ???????????????????  
 		while (accumulator >= TIMESTEP) {
-			updateGame(TIMESTEP); // ʹ�ù̶�ʱ�䲽��������Ϸ  
+			updateGame(TIMESTEP); // ??ù??????????????  
 			accumulator -= TIMESTEP;
 		}
-		// ��ֵ���㣨�����Ҫ�Ļ���������Ի���accumulator��ʣ��ֵ���У�  
+		// ????????????????????????????accumulator?????????У?  
 		double alpha = accumulator / TIMESTEP;
 
-		// ��Ⱦ��Ϸ  
-		updateWindow(); // ע�⣺����û��ʹ��alpha���в�ֵ����ΪrenderGame������Ҫ���������֧�ֲ�ֵ  
+		// ??????  
+		updateWindow(); // ?????????????alpha???в???????renderGame?????????????????????  
 
-		// �����û�����  
+		// ???????????  
 		userClick();
 
-		// ����Ƿ�Ӧ���˳���Ϸ  
+		// ???????????????  
 		if (checkOver()) {
 			break;
 		}
@@ -1023,3 +1020,41 @@ int main() {
 
 	return 0;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
