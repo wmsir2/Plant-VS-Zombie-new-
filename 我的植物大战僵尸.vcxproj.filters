@@ -33,6 +33,18 @@
     <ClCompile Include="Zombie.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="Peashooter.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="PlantFactory.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="PotatoMine.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Sunflower.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="tool.h">
@@ -51,6 +63,21 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Map.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Peashooter.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="PlantFactory.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="PotatoMine.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Sunflower.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="sunshineBall.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

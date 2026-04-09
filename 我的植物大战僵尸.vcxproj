@@ -128,7 +128,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Peashooter.cpp" />
     <ClCompile Include="Plant.cpp" />
+    <ClCompile Include="PlantFactory.cpp" />
+    <ClCompile Include="PotatoMine.cpp" />
+    <ClCompile Include="Sunflower.cpp" />
     <ClCompile Include="sunshineBall.cpp" />
     <ClCompile Include="tool.cpp" />
     <ClCompile Include="vector2.cpp" />
@@ -137,7 +141,12 @@
   <ItemGroup>
     <ClInclude Include="config.h" />
     <ClInclude Include="Map.h" />
+    <ClInclude Include="Peashooter.h" />
     <ClInclude Include="Plant.h" />
+    <ClInclude Include="PlantFactory.h" />
+    <ClInclude Include="PotatoMine.h" />
+    <ClInclude Include="Sunflower.h" />
+    <ClInclude Include="sunshineBall.h" />
     <ClInclude Include="tool.h" />
     <ClInclude Include="vector2.h" />
     <ClInclude Include="Zombie.h" />
