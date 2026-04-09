@@ -35,6 +35,8 @@ public:
 
 class Sunflower : public Plant {
 public:
+	void produceSun();
+public:
 	Sunflower(int row, int col) : Plant(100,row,col) {	//构造函数 设置血量 行 列
 		type = 2;
 		PlantName = "Sunflower";  // 设置植物名称
