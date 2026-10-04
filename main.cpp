@@ -74,6 +74,8 @@ while (游戏运行) {
 #include "Map.h"        // 地图类定义
 #include <mmsystem.h>   // 多媒体播放头文件
 #pragma comment(lib, "winmm.lib") // 链接winmm.lib库用于播放音乐
+#include <Shlwapi.h>             // PathRemoveFileSpecA 等路径辅助函数
+#pragma comment(lib, "Shlwapi.lib")
 using namespace std;
 
 // ============================================================================
@@ -222,6 +224,28 @@ bool fileExist(const char* name) {
  * 3. 初始化游戏状态变量
  */
 void gameInit() {
+    // -------- 切换工作目录,确保能找到 res/ 资源 --------
+    // 不管走 exe 是从项目根、x64/Release\ 还是其他位置启动的,
+    // 都从 exe 自身路径往上找,直到找到含 res/ 的目录并切进去。
+    {
+        char exePath[MAX_PATH];
+        GetModuleFileNameA(NULL, exePath, MAX_PATH);   // 拿 exe 完整路径
+        PathRemoveFileSpecA(exePath);                  // 去文件名,留目录
+        // 往上最多查 5 层
+        for (int i = 0; i < 5; i++) {
+            char candidate[MAX_PATH];
+            strcpy_s(candidate, exePath);
+            strcat_s(candidate, "\\res");
+            DWORD attr = GetFileAttributesA(candidate);
+            if (attr != INVALID_FILE_ATTRIBUTES && (attr & FILE_ATTRIBUTE_DIRECTORY)) {
+                SetCurrentDirectoryA(exePath);
+                cout << "[gameInit] Working dir set to: " << exePath << endl;
+                break;
+            }
+            if (!PathRemoveFileSpecA(exePath)) break;  // 已经到盘符根了
+        }
+    }
+
     // -------- 初始化图形窗口 --------
     // 窗口大小: WIN_WIDTH x WIN_HEIGHT
     initgraph(WIN_WIDTH, WIN_HEIGHT, 1);
